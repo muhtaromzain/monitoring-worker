@@ -1,7 +1,7 @@
 from watchdog.events import FileSystemEventHandler
 from process_data import ProcessData
 from config.database import Database
-from model.central_portal import CentralPortal
+from model.customer_portal import CustomerPortal
 
 class MyHandler(FileSystemEventHandler):
     # def on_modified(self, event):
@@ -17,7 +17,7 @@ class MyHandler(FileSystemEventHandler):
         convertData   = ProcessData.convertData(dataCsv)
         header        = ProcessData.generateHeader(dataCsv)
         convertHeader = ProcessData.convertData(header, False)
-        insertData    = CentralPortal.Insert(convertHeader, convertData)
+        insertData    = CustomerPortal.Insert(convertHeader, convertData)
 
         if (insertData):
             ProcessData.moveFile(event.src_path)

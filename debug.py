@@ -1,7 +1,7 @@
 import os
 from process_data import Process as process
 from config.database import Database
-from model.central_portal import CentralPortal
+from model.customer_portal import CustomerPortal
 from templates.txt import Txt as template
 from time import strftime, localtime
 import datetime
@@ -54,15 +54,15 @@ class Debug():
         print(time1)
 
     def demoExport():
-        header = CentralPortal.GetHeader()
+        header = CustomerPortal.GetHeader()
         print(header)
-        CTL = CentralPortal.GetCTL()
+        CTL = CustomerPortal.GetCTL()
         print(CTL)
         data = process.readCsv('ContohReport2.csv')
         header        = process.generateHeader(data)
         convertHeader = process.convertData(header, False)
         export = process.export(convertHeader)
-        detail = CentralPortal.GetDetail(convertHeader)
+        detail = CustomerPortal.GetDetail(convertHeader)
         print(detail)
 
     def convertWhereClause():

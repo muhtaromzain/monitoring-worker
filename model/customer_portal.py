@@ -2,12 +2,12 @@ from config.database import Database
 import logging
 import mariadb
 
-class CentralPortal():
+class CustomerPortal():
     def Insert(header: list, data: list):
         conn   = Database.Connect()
         cursor = conn.cursor()
-        headerSql    = "INSERT INTO central_portal_headers (dt_code, order_number, customer_code, warehouse_code, term_code, created_on) VALUES (?,?,?,?,?,?)"
-        sql          = "INSERT INTO central_portal (dt_code, order_number, barcode, qty, created_on) VALUES (?,?,?,?,?)"
+        headerSql    = "INSERT INTO customer_portal_headers (dt_code, order_number, customer_code, warehouse_code, term_code, created_on) VALUES (?,?,?,?,?,?)"
+        sql          = "INSERT INTO customer_portal (dt_code, order_number, barcode, qty, created_on) VALUES (?,?,?,?,?)"
 
         try:
             # insert data
@@ -30,7 +30,7 @@ class CentralPortal():
     def GetAll():
         conn   = Database.Connect()
         cursor = conn.cursor()
-        sql    = f'SELECT * FROM central_portal'
+        sql    = f'SELECT * FROM customer_portal'
 
         try:
             # insert data
@@ -48,7 +48,7 @@ class CentralPortal():
         conn   = Database.Connect()
         cursor = conn.cursor()
 
-        whereClause = CentralPortal.convertWhereClause(data)
+        whereClause = CustomerPortal.convertWhereClause(data)
 
         sql    = """SELECT 	'EPO' AS system_name,
                         COUNT(data_cp.order_number) AS no_of_po_sent,
@@ -65,8 +65,8 @@ class CentralPortal():
                         COUNT(cp.order_number) AS no_of_lines,
                         0 AS net_price,
                         SUM(cp.qty) AS quantity_sent
-                    FROM central_portal_headers AS cph
-                    LEFT JOIN central_portal AS cp ON cp.order_number = cph.order_number AND cp.dt_code = cph.dt_code
+                    FROM customer_portal_headers AS cph
+                    LEFT JOIN customer_portal AS cp ON cp.order_number = cph.order_number AND cp.dt_code = cph.dt_code
                     WHERE %s
                     GROUP BY cph.order_number, cph.dt_code
                     ) AS data_cp"""
@@ -103,7 +103,7 @@ class CentralPortal():
         conn   = Database.Connect()
         cursor = conn.cursor()
 
-        whereClause = CentralPortal.convertWhereClause(data)
+        whereClause = CustomerPortal.convertWhereClause(data)
 
         sql    = """SELECT cph.dt_code,
                         cph.order_number,
@@ -114,8 +114,8 @@ class CentralPortal():
                         COUNT(cp.order_number) AS no_of_lines,
                         0 AS net_price,
                         SUM(cp.qty) AS quantity_sent
-                    FROM central_portal_headers AS cph
-                    LEFT JOIN central_portal AS cp ON cp.order_number = cph.order_number AND cp.dt_code = cph.dt_code
+                    FROM customer_portal_headers AS cph
+                    LEFT JOIN customer_portal AS cp ON cp.order_number = cph.order_number AND cp.dt_code = cph.dt_code
                     WHERE %s
                     GROUP BY cph.order_number, cph.dt_code"""
 
@@ -156,7 +156,7 @@ class CentralPortal():
         conn   = Database.Connect()
         cursor = conn.cursor()
 
-        whereClause = CentralPortal.convertDetailWhereClause(data)
+        whereClause = CustomerPortal.convertDetailWhereClause(data)
 
         sql    = """SELECT cp.dt_code,
                         cp.order_number,
@@ -164,7 +164,7 @@ class CentralPortal():
                         cp.qty,
                         0 AS price,
                         cp.created_on
-                    FROM central_portal AS cp
+                    FROM customer_portal AS cp
                     WHERE %s"""
 
         sql = sql.replace('%s', whereClause)

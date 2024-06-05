@@ -6,7 +6,7 @@ import shutil
 import os
 from templates.txt import Txt as template
 from itertools import groupby
-from model.central_portal import CentralPortal
+from model.customer_portal import CustomerPortal
 
 class ProcessData():
     def readCsv(filePath: str):
@@ -77,9 +77,9 @@ class ProcessData():
 
         outputPath = directory + '/' + fileName 
 
-        CTL = CentralPortal.GetCTL(data)
-        HDR = CentralPortal.GetHeader(data)
-        LIN = CentralPortal.GetDetail(data)
+        CTL = CustomerPortal.GetCTL(data)
+        HDR = CustomerPortal.GetHeader(data)
+        LIN = CustomerPortal.GetDetail(data)
 
         bindedData = ProcessData.bindHeaderAndDetail(HDR, LIN)
 
