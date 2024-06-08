@@ -66,7 +66,7 @@ class Txt():
         Price = str(data['price'])
         Price = ('0' * (13 - len(Price))) + Price
 
-        Uom = 'CS'
+        Uom = ''
 
         res = recordType + LineNumber + ProductCode + QtyOrdered + Price + Uom
 
