@@ -172,7 +172,7 @@ class CustomerPortal():
                     LEFT JOIN customer_portal_headers AS cph ON cph.dt_code = u.username
                     LEFT JOIN customer_portal AS cp ON cp.order_number = cph.order_number AND cp.dt_code = cph.dt_code AND cp.created_on = cph.created_on
                     WHERE cp.dt_code IN %s
-                    AND cp.created_on = "1717654526"
+                    AND cp.created_on = "$timestamps"
                     AND u.send_to_cp = "$sendToCp"
                     AND u.active = "1"
                     AND ug.group_id = "2"
@@ -440,6 +440,48 @@ class CustomerPortal():
             return True
         except mariadb.IntegrityError as e:
             logging.warn("failed to rollback header")
+            print("Error: {}".format(e))
+            conn.rollback()
+            return False
+        finally:
+            # free resources
+            cursor.close()
+            conn.close()
+    
+    def UpdateOrderNumber(data: list):
+        conn   = Database.Connect()
+        cursor = conn.cursor()
+        sqlSelect = """
+                        SELECT LPAD(MAX(cph.order_number) + 1, '5',0) AS order_number_counter
+                        FROM $tableName AS cph
+                        WHERE cph.dt_code IN %s
+                        AND cph.created_on = "$timestamps"
+                        GROUP BY cph.dt_code, cph.created_on
+                    """
+        sqlSelect = sqlSelect.replace('%s', data['dtCode']).replace('$timestamps', data['timestamps'])
+
+        sqlMain   = """
+                        UPDATE $tableName AS cph,
+                        (
+                            $sqlSelect
+                        ) AS src
+                        SET cph.order_number = src.order_number_counter
+                        WHERE cph.dt_code IN %s
+                        AND cph.created_on = "$timestamps"
+                    """
+
+        sqlHeader = sqlMain.replace('$sqlSelect', sqlSelect).replace('$tableName', 'customer_portal_headers').replace('%s', data['dtCode']).replace('$timestamps', data['timestamps'])
+        sql       = sqlMain.replace('$sqlSelect', sqlSelect).replace('$tableName', 'customer_portal').replace('%s', data['dtCode']).replace('$timestamps', data['timestamps'])
+
+        try:
+            # insert data
+            cursor.execute(sqlHeader)
+            cursor.execute(sql)
+            conn.commit()
+            logging.info("updated values succeed")
+            return True
+        except mariadb.IntegrityError as e:
+            logging.warn("failed to update")
             print("Error: {}".format(e))
             conn.rollback()
             return False

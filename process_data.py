@@ -189,3 +189,19 @@ class ProcessData():
             res['isSuccess'] = False
         
         return res
+    
+    def sendToCp(dtCode: str, timestamps: str):
+        # format for worker
+        data = {
+            'dtCode': '("' + dtCode + '")',
+            'timestamps': timestamps,
+            'basename': dtCode + '_' + timestamps
+        }
+
+        # update manual
+        update = CustomerPortal.UpdateOrderNumber(data)
+
+        ProcessData.export(data, isAuto=False)
+
+        return update
+    
