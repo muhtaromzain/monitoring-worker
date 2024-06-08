@@ -283,8 +283,8 @@ class CustomerPortal():
         sql    = """SELECT cp.dt_code,
                         cp.order_number,
                         cp.sku,
-                        cp.qty,
-                        0 AS price,
+                        SUM(cp.qty) AS qty,
+                        SUM(0) AS price,
                         cp.created_on
                     FROM users AS u
                     LEFT JOIN users_groups AS ug ON ug.user_id = u.id
@@ -294,7 +294,8 @@ class CustomerPortal():
                     AND cp.created_on = "$timestamps"
                     AND u.send_to_cp = "$sendToCp"
                     AND u.active = "1"
-                    AND ug.group_id = "2" 
+                    AND ug.group_id = "2"
+                    GROUP BY cp.dt_code, cp.order_number, cp.sku, cp.created_on
                 """
 
         sql = sql.replace('%s', whereClause).replace('$timestamps', data['timestamps']).replace('$sendToCp', sendToCp)
