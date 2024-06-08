@@ -162,9 +162,16 @@ cython_debug/
 #.idea/
 
 debug_dev.py
+
 report/*
-output/*
-input/*
 !report/.gitkeep
+!report/errors/
+!report/errors/.gitkeep
+
+output/*
 !output/.gitkeep
+!output/errors/
+!output/errors/.gitkeep
+
+input/*
 !input/.gitkeep
