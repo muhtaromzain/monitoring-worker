@@ -37,9 +37,11 @@ class CustomerPortal():
                     LEFT JOIN users_groups AS ug ON ug.user_id = u.id
                     LEFT JOIN customer_portal_headers AS cph ON cph.dt_code = u.username
                     LEFT JOIN customer_portal_temp AS cpt ON cpt.dt_code = cph.dt_code AND cpt.created_on = cph.created_on AND cpt.order_number = cpt.order_number
-                    WHERE u.username IN %s"""
+                    WHERE u.username IN %s
+                    AND cph.created_on = "$timestamps"
+                """
         
-        sql = sql.replace('%s', data['dtCode'])
+        sql = sql.replace('%s', data['dtCode']).replace('$timestamps', data['timestamps'])
 
         try:
             # insert data
@@ -392,6 +394,7 @@ class CustomerPortal():
                             LEFT JOIN customer_portal AS cp ON cp.dt_code = cph.dt_code AND cp.created_on = cph.created_on
                             WHERE cph.dt_code IN %s
                             AND cp.dt_code IS NULL
+                            AND cph.created_on = "$timestamps"
                             GROUP BY cph.dt_code, cph.created_on
                         )
                     AND created_on IN
@@ -401,11 +404,12 @@ class CustomerPortal():
                             LEFT JOIN customer_portal AS cp ON cp.dt_code = cph.dt_code AND cp.created_on = cph.created_on
                             WHERE cph.dt_code IN %s
                             AND cp.dt_code IS NULL
+                            AND cph.created_on = "$timestamps"
                             GROUP BY cph.dt_code, cph.created_on
                         )
                 """
         
-        sql = sql.replace('%s', data['dtCode'])
+        sql = sql.replace('%s', data['dtCode']).replace('$timestamps', data['timestamps'])
 
         try:
             # insert data
@@ -428,7 +432,7 @@ class CustomerPortal():
         cursor = conn.cursor()
         sql    = """DELETE FROM customer_portal_headers 
                     WHERE dt_code IN %s
-                    AND created_on = "$timestamp"
+                    AND created_on = "$timestamps"
                 """
         
         sql = sql.replace('%s', data['dtCode']).replace('$timestamps', data['timestamps'])
