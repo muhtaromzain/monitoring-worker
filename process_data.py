@@ -81,6 +81,19 @@ class ProcessData():
 
         process = shutil.move(filePath, destinationPath)
         return process 
+        
+    def moveFileToError(filePath: str):
+        fileName = ntpath.basename(filePath)
+        directoryName = datetime.today().strftime("%d-%m-%Y")
+        directory     = './report/errors/' + directoryName
+
+        destinationPath = directory + '/' + fileName
+
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
+        process = shutil.move(filePath, destinationPath)
+        return process 
 
     def export(data: list, isAuto = True):
         counter = 0
