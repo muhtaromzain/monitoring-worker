@@ -165,12 +165,12 @@ debug_dev.py
 
 report/*
 !report/.gitkeep
-!report/errors/
+report/errors/
 !report/errors/.gitkeep
 
 output/*
 !output/.gitkeep
-!output/errors/
+output/errors/
 !output/errors/.gitkeep
 
 input/*
