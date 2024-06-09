@@ -25,21 +25,24 @@ class MyHandler(FileSystemEventHandler):
                 insertData    = CustomerPortal.InsertTemp(convertData)
 
                 if insertData:
-                    ProcessData.moveFile(event.src_path)
                     insert = CustomerPortal.InsertFromTemp(orderData['detail'])
                     if insert:
                         CustomerPortal.DeleteTemp(orderData['detail']['dtCode'], orderData['detail']['timestamps'])
                         CustomerPortal.DeleteUnknownDtCode(orderData['detail'])
+                        ProcessData.moveFile(event.src_path)
                         ProcessData.export(orderData['detail'])
                         # pass
                     else:
                         CustomerPortal.RollbackHeader(orderData['detail'])
+                        ProcessData.moveFileToError(event.src_path)
 
                 else:
                     CustomerPortal.RollbackHeader(orderData['detail'])
+                    ProcessData.moveFileToError(event.src_path)
 
             else:
                 CustomerPortal.RollbackHeader(orderData['detail'])
+                ProcessData.moveFileToError(event.src_path)
         else:
             logging.warn("Invalid file type, must send csv file")
             os.remove(event.src_path)
