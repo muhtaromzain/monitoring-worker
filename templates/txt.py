@@ -2,6 +2,11 @@ from time import strftime, localtime
 import datetime
 
 class Txt():
+    
+    CUSTOMER_CODE  = '9001'
+    WAREHOUSE_CODE = '9104'
+    TERM_CODE      = '02'
+
     def OBRCTL(data: list):
         recordType      = 'OBRCTL'
         sysmName        = data[0]['system_name']
@@ -32,7 +37,7 @@ class Txt():
         noLines       = str(data['no_of_lines'])
         NumberOfLines = noLines + (' ' * (4 - len(noLines))) 
 
-        CustomerCode = str(data['customer_code'])
+        CustomerCode = Txt.CUSTOMER_CODE
         SoldToParty  = '00' + str(data['dt_code'])
         ShipTo       = '00' + str(data['dt_code'])
 
@@ -46,8 +51,8 @@ class Txt():
         DeliveryDate = strftime('%Y%m%d', localtime(int(DeliveryDate.timestamp())))
         DeliveryDate = DeliveryDate + (' ' * (10 - (len(DeliveryDate))))
 
-        WarehouseCode = str(data['warehouse_code'])
-        TermCode      = str(data['term_code'])
+        WarehouseCode = Txt.WAREHOUSE_CODE
+        TermCode      = Txt.TERM_CODE
         
         res = recordType + PoNumber + PoDate + NumberOfLines + CustomerCode + SoldToParty + ShipTo + OrderDate + DeliveryDate + WarehouseCode + TermCode
 
