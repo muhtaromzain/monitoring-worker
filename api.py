@@ -79,6 +79,7 @@ async def sendTxtToCp(order: Order):
     timestamps = order.timestamps
 
     data = {
+        'existDtCodeOrder': '("")',
         'dtCode': '("' + dtCode + '")',
         'timestamps': timestamps,
         'basename': dtCode + '_' + timestamps
