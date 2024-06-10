@@ -518,6 +518,34 @@ class CustomerPortal():
             cursor.close()
             conn.close()
 
+    def existOrderNumber(dtCode: str, timestamps: str):
+        conn   = Database.Connect()
+        cursor = conn.cursor()
+
+        sql = """SELECT cph.dt_code
+            FROM customer_portal_headers AS cph
+            LEFT JOIN customer_portal AS cp ON cp.dt_code = cph.dt_code
+            WHERE cph.dt_code IN %s
+            AND (cph.order_number != '00000' OR cph.order_number IS NULL)
+            AND cph.created_on = "$timestamps"
+            GROUP BY cph.dt_code, cph.created_on
+        """
+
+        sql = sql.replace('%s', dtCode).replace('$timestamps', timestamps)
+
+        try:
+            # insert data
+            cursor.execute(sql)
+            data = cursor.fetchall()
+
+            return data
+        except mariadb.IntegrityError as e:
+            print("Error: {}".format(e))
+        finally:
+            # free resources
+            cursor.close()
+            conn.close()
+
     def convertWhereClause(data: list):
         whereClause = ''
         for value in data:
