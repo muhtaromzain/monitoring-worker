@@ -33,12 +33,11 @@ class CustomerPortal():
                         cpt.sku,
                         cpt.qty,
                         cpt.created_on
-                    FROM users AS u
-                    LEFT JOIN users_groups AS ug ON ug.user_id = u.id
-                    LEFT JOIN customer_portal_headers AS cph ON cph.dt_code = u.username
-                    LEFT JOIN customer_portal_temp AS cpt ON cpt.dt_code = cph.dt_code AND cpt.created_on = cph.created_on AND cpt.order_number = cpt.order_number
-                    WHERE u.username IN %s
-                    AND cph.created_on = "$timestamps"
+                    FROM customer_portal_temp AS cpt
+                    LEFT JOIN customer_portal AS cp ON cp.dt_code = cpt.dt_code AND cp.created_on = cpt.created_on
+                    WHERE cpt.dt_code IN %s
+                    AND cpt.created_on = "$timestamps"
+                    AND cp.dt_code IS NULL
                 """
         
         sql = sql.replace('%s', data['dtCode']).replace('$timestamps', data['timestamps'])
@@ -156,8 +155,8 @@ class CustomerPortal():
 
         sql    = """SELECT 	'EPO' AS system_name,
                         COUNT(data_cp.order_number) AS no_of_po_sent,
-                        SUM(data_cp.quantity_sent) AS quantity_sent,
-                        SUM(data_cp.net_price) AS net_price
+                        IF(data_cp.quantity_sent IS NULL, 0, SUM(data_cp.quantity_sent)) AS quantity_sent,
+                        IF(data_cp.net_price IS NULL, 0, SUM(data_cp.net_price)) AS net_price
                     FROM
                     (
                     SELECT cph.dt_code,
@@ -174,6 +173,7 @@ class CustomerPortal():
                     LEFT JOIN customer_portal_headers AS cph ON cph.dt_code = u.username
                     LEFT JOIN customer_portal AS cp ON cp.order_number = cph.order_number AND cp.dt_code = cph.dt_code AND cp.created_on = cph.created_on
                     WHERE cp.dt_code IN %s
+                    AND cp.dt_code NOT IN $duplicateOrder
                     AND cp.created_on = "$timestamps"
                     AND u.send_to_cp = "$sendToCp"
                     AND u.active = "1"
@@ -181,7 +181,7 @@ class CustomerPortal():
                     GROUP BY cph.dt_code, cph.created_on, cph.order_number
                     ) AS data_cp"""
 
-        sql = sql.replace('%s', whereClause).replace('$timestamps', data['timestamps']).replace('$sendToCp', sendToCp)
+        sql = sql.replace('%s', whereClause).replace('$duplicateOrder', data['existDtCodeOrder']).replace('$timestamps', data['timestamps']).replace('$sendToCp', sendToCp)
 
         try:
             # insert data
@@ -233,13 +233,14 @@ class CustomerPortal():
                     LEFT JOIN customer_portal_headers AS cph ON cph.dt_code = u.username
                     LEFT JOIN customer_portal AS cp ON cp.dt_code = cph.dt_code AND cp.created_on = cph.created_on AND cp.order_number = cp.order_number
                     WHERE cph.dt_code IN %s
+                    AND cph.dt_code NOT IN $duplicateOrder 
                     AND cp.created_on = "$timestamps"
                     AND u.send_to_cp = "$sendToCp"
                     AND u.active = "1"
                     AND ug.group_id = "2"
                     GROUP BY cph.dt_code, cph.created_on, cph.order_number"""
 
-        sql = sql.replace('%s', whereClause).replace('$timestamps', data['timestamps']).replace('$sendToCp', sendToCp)
+        sql = sql.replace('%s', whereClause).replace('$duplicateOrder', data['existDtCodeOrder']).replace('$timestamps', data['timestamps']).replace('$sendToCp', sendToCp)
 
         try:
             # insert data
@@ -293,6 +294,7 @@ class CustomerPortal():
                     LEFT JOIN customer_portal_headers AS cph ON cph.dt_code = u.username
                     LEFT JOIN customer_portal AS cp ON cp.dt_code = cph.dt_code AND cp.created_on = cph.created_on AND cp.order_number = cp.order_number
                     WHERE cph.dt_code IN %s
+                    AND cph.dt_code NOT IN $duplicateOrder
                     AND cp.created_on = "$timestamps"
                     AND u.send_to_cp = "$sendToCp"
                     AND u.active = "1"
@@ -300,7 +302,7 @@ class CustomerPortal():
                     GROUP BY cp.dt_code, cp.order_number, cp.sku, cp.created_on
                 """
 
-        sql = sql.replace('%s', whereClause).replace('$timestamps', data['timestamps']).replace('$sendToCp', sendToCp)
+        sql = sql.replace('%s', whereClause).replace('$duplicateOrder', data['existDtCodeOrder']).replace('$timestamps', data['timestamps']).replace('$sendToCp', sendToCp)
 
         try:
             # insert data
@@ -526,7 +528,6 @@ class CustomerPortal():
             FROM customer_portal_headers AS cph
             LEFT JOIN customer_portal AS cp ON cp.dt_code = cph.dt_code
             WHERE cph.dt_code IN %s
-            AND (cph.order_number != '00000' OR cph.order_number IS NULL)
             AND cph.created_on = "$timestamps"
             GROUP BY cph.dt_code, cph.created_on
         """
