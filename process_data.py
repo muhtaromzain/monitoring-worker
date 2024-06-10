@@ -145,63 +145,68 @@ class ProcessData():
         return result
     
     def reservedOrderNumber(filePath: str) -> dict:
-        res = {}
-        with open(filePath) as csvfile:
-            reader = csv.reader(csvfile, delimiter=',')
-            data = list(reader)
+        try:
+            res = {}
+            with open(filePath) as csvfile:
+                reader = csv.reader(csvfile, delimiter=',')
+                data = list(reader)
 
-        data.pop(0)
+            data.pop(0)
 
-        flattenedDtCode = [item[0] for item in data]
-        distinctDtCode  = list(set(flattenedDtCode))
-        
-        flattenedTimestamps = [item[3] for item in data]
-        timestamps  = list(set(flattenedTimestamps))[0]
+            flattenedDtCode = [item[0] for item in data]
+            distinctDtCode  = list(set(flattenedDtCode))
+            
+            flattenedTimestamps = [item[3] for item in data]
+            timestamps  = list(set(flattenedTimestamps))[0]
 
-        whereClauseDtCode = '(' + ', '.join(['"' + item + '"' for item in distinctDtCode]) + ')'
+            whereClauseDtCode = '(' + ', '.join(['"' + item + '"' for item in distinctDtCode]) + ')'
 
-        # delete temp
-        CustomerPortal.DeleteTemp(whereClauseDtCode, timestamps)
+            # delete temp
+            CustomerPortal.DeleteTemp(whereClauseDtCode, timestamps)
 
-        dataOrderNumber = CustomerPortal.GetHeaderOrderNumberCounter(distinctDtCode)
+            dataOrderNumber = CustomerPortal.GetHeaderOrderNumberCounter(distinctDtCode)
 
-        # converted dt order number
-        dtOrderNumber = {}
-        insertReservedOrderNumber = []
-        for val in dataOrderNumber:
-            value = list(val)
-            value.append(timestamps)
-            insertReservedOrderNumber.append(tuple(value))
-            dtOrderNumber[val[0]] = val[1]
+            # converted dt order number
+            dtOrderNumber = {}
+            insertReservedOrderNumber = []
+            for val in dataOrderNumber:
+                value = list(val)
+                value.append(timestamps)
+                insertReservedOrderNumber.append(tuple(value))
+                dtOrderNumber[val[0]] = val[1]
 
-        # mapped null dt in epo
-        for dtCode in distinctDtCode:
-            if dtCode not in dtOrderNumber.keys():
-                dtOrderNumber[dtCode] = '00000'
-                # include DT code that are not in database
-                insertReservedOrderNumber.append((dtCode, '00000', '0000', '0000', '00', 0, None, 0, timestamps))
+            # mapped null dt in epo
+            for dtCode in distinctDtCode:
+                if dtCode not in dtOrderNumber.keys():
+                    dtOrderNumber[dtCode] = '00000'
+                    # include DT code that are not in database
+                    insertReservedOrderNumber.append((dtCode, '00000', '0000', '0000', '00', 0, None, 0, timestamps))
 
-        insertHeader = CustomerPortal.InsertHeader(insertReservedOrderNumber)
-        # insertHeader = True
+            insertHeader = CustomerPortal.InsertHeader(insertReservedOrderNumber)
+            # insertHeader = True
 
-        # set data master
-        res['data'] = dtOrderNumber
-        res['detail'] = {
-            'dtCodeList': distinctDtCode,
-            'dtCode': whereClauseDtCode,
-            'timestamps': timestamps,
-            'filepath': filePath,
-            'filename': ntpath.basename(filePath),
-            'basename': ntpath.basename(filePath).replace('.csv', ''),
-            'outputFilename': ntpath.basename(filePath).replace('.csv', '.txt')
-        }
+            # set data master
+            res['data'] = dtOrderNumber
+            res['detail'] = {
+                'dtCodeList': distinctDtCode,
+                'dtCode': whereClauseDtCode,
+                'timestamps': timestamps,
+                'filepath': filePath,
+                'filename': ntpath.basename(filePath),
+                'basename': ntpath.basename(filePath).replace('.csv', ''),
+                'outputFilename': ntpath.basename(filePath).replace('.csv', '.txt')
+            }
 
-        if insertHeader:
-            res['isSuccess'] = True
-        else:
+            if insertHeader:
+                res['isSuccess'] = True
+            else:
+                res['isSuccess'] = False
+            
+            return res
+        except:
+            ProcessData.moveFileToError(filePath)
             res['isSuccess'] = False
-        
-        return res
+            return res
     
     def sendToCp(dtCode: str, timestamps: str):
         # format for worker
