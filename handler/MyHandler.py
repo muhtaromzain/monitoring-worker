@@ -20,15 +20,13 @@ class MyHandler(FileSystemEventHandler):
             if orderData['isSuccess']:
                 dataCsv       = ProcessData.readCsv(event.src_path, orderData['data'])
                 convertData   = ProcessData.convertData(dataCsv)
-                # header        = ProcessData.generateHeader(dataCsv)
-                # convertHeader = ProcessData.convertData(header, False)
                 insertData    = CustomerPortal.InsertTemp(convertData)
 
                 if insertData:
                     insert = CustomerPortal.InsertFromTemp(orderData['detail'])
                     if insert:
                         CustomerPortal.DeleteTemp(orderData['detail']['dtCode'], orderData['detail']['timestamps'])
-                        CustomerPortal.DeleteUnknownDtCode(orderData['detail'])
+                        # CustomerPortal.DeleteUnknownDtCode(orderData['detail'])
                         ProcessData.moveFile(event.src_path)
                         ProcessData.export(orderData['detail'])
                         # pass
@@ -41,7 +39,6 @@ class MyHandler(FileSystemEventHandler):
                     ProcessData.moveFileToError(event.src_path)
 
             else:
-                CustomerPortal.RollbackHeader(orderData['detail'])
                 ProcessData.moveFileToError(event.src_path)
         else:
             logging.warn("Invalid file type, must send csv file")
