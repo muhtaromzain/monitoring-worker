@@ -24,7 +24,7 @@ class WD():
         
         try:
             while True:
-                print('Watching...')
+                logging.info('Watching...')
                 time.sleep(2)
         except KeyboardInterrupt:
             observer.stop()
