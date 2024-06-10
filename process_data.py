@@ -16,9 +16,14 @@ class ProcessData():
             with open(filePath) as csvfile:
                 reader = csv.DictReader(csvfile)
                 for row in reader:
+                    if row['DT code'] in dataHeader.keys():
+                        orderNumber = dataHeader[row['DT code']]
+                    else:
+                        orderNumber = '00000'
+
                     data.append({
                             'dt_code': row['DT code'],
-                            'order_number': dataHeader[row['DT code']],
+                            'order_number': orderNumber,
                             'sku': row['SKU'],
                             'qty': row['Qty'],
                             # 'created_on': int(datetime.now().timestamp())
@@ -110,19 +115,25 @@ class ProcessData():
         outputPath = directory + '/' + fileName 
 
         CTL = CustomerPortal.GetCTL(data, isAuto)
-        HDR = CustomerPortal.GetHeader(data, isAuto)
-        LIN = CustomerPortal.GetDetail(data, isAuto)
 
-        bindedData = ProcessData.bindHeaderAndDetail(HDR, LIN)
+        if CTL[0]['no_of_po_sent'] != 0:
+            HDR = CustomerPortal.GetHeader(data, isAuto)
+            LIN = CustomerPortal.GetDetail(data, isAuto)
 
-        with open(outputPath, "w") as text_file:
-            text_file.write(template.OBRCTL(CTL) + '\n')
-            for header in bindedData:
-                text_file.write(template.OBRHDR(header) + '\n')
-                for item in header['items']:
-                    counter += 1
-                    text_file.write(template.OBRLIN(item, counter) + '\n')
-                counter = 0
+            bindedData = ProcessData.bindHeaderAndDetail(HDR, LIN)
+
+            with open(outputPath, "w") as text_file:
+                text_file.write(template.OBRCTL(CTL) + '\n')
+                for header in bindedData:
+                    text_file.write(template.OBRHDR(header) + '\n')
+                    for item in header['items']:
+                        counter += 1
+                        text_file.write(template.OBRLIN(item, counter) + '\n')
+                    counter = 0
+
+            return True
+        else:
+            return False
                     
     def bindHeaderAndDetail(header: list, detail: list):
         # Create a dictionary to hold the items grouped by 'dt_code' and 'order_number'
@@ -166,18 +177,25 @@ class ProcessData():
 
             dataOrderNumber = CustomerPortal.GetHeaderOrderNumberCounter(distinctDtCode)
 
+            existOrderNumber = CustomerPortal.existOrderNumber(whereClauseDtCode, timestamps)
+            existOrderNumber = [item[0] for item in existOrderNumber]
+            whereClauseDuplicateOrder = '(' + ', '.join(['"' + item + '"' for item in existOrderNumber]) + ')'
+
             # converted dt order number
             dtOrderNumber = {}
             insertReservedOrderNumber = []
             for val in dataOrderNumber:
-                value = list(val)
-                value.append(timestamps)
-                insertReservedOrderNumber.append(tuple(value))
-                dtOrderNumber[val[0]] = val[1]
-
+                # exclude exist order number with same timestamp
+                if val[0] not in existOrderNumber:
+                    value = list(val)
+                    value.append(timestamps)
+                    insertReservedOrderNumber.append(tuple(value))
+                    dtOrderNumber[val[0]] = val[1]
+            
             # mapped null dt in epo
             for dtCode in distinctDtCode:
-                if dtCode not in dtOrderNumber.keys():
+                # exclude exist order number with same timestamp
+                if dtCode not in dtOrderNumber.keys() and dtCode not in existOrderNumber:
                     dtOrderNumber[dtCode] = '00000'
                     # include DT code that are not in database
                     insertReservedOrderNumber.append((dtCode, '00000', '0000', '0000', '00', 0, None, 0, timestamps))
@@ -188,6 +206,7 @@ class ProcessData():
             # set data master
             res['data'] = dtOrderNumber
             res['detail'] = {
+                'existDtCodeOrder': whereClauseDuplicateOrder,
                 'dtCodeList': distinctDtCode,
                 'dtCode': whereClauseDtCode,
                 'timestamps': timestamps,
@@ -197,7 +216,7 @@ class ProcessData():
                 'outputFilename': ntpath.basename(filePath).replace('.csv', '.txt')
             }
 
-            if insertHeader:
+            if insertHeader and len(dtOrderNumber) != 0:
                 res['isSuccess'] = True
             else:
                 res['isSuccess'] = False
@@ -211,6 +230,7 @@ class ProcessData():
     def sendToCp(dtCode: str, timestamps: str):
         # format for worker
         data = {
+            'existDtCodeOrder': '("")',
             'dtCode': '("' + dtCode + '")',
             'timestamps': timestamps,
             'basename': dtCode + '_' + timestamps
