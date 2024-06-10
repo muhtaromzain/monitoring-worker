@@ -456,27 +456,50 @@ class CustomerPortal():
     def UpdateOrderNumber(data: list):
         conn   = Database.Connect()
         cursor = conn.cursor()
-        sqlSelect = """
-                        SELECT LPAD(MAX(cph.order_number) + 1, '5',0) AS order_number_counter
+        sqlSelectHeader = """
+                        SELECT LPAD(MAX(cph.order_number) + 1, '5',0) AS order_number_counter,
+                        "9001" AS customer_code,
+                        "9104" AS warehouse_code,
+                        "02" AS term_code
                         FROM $tableName AS cph
                         WHERE cph.dt_code IN %s
-                        AND cph.created_on = "$timestamps"
-                        GROUP BY cph.dt_code, cph.created_on
+                        GROUP BY cph.dt_code
                     """
-        sqlSelect = sqlSelect.replace('%s', data['dtCode']).replace('$timestamps', data['timestamps'])
+        sqlSelectHeader = sqlSelectHeader.replace('%s', data['dtCode'])
 
-        sqlMain   = """
+        sqlSelectOrder = """
+                        SELECT LPAD(MAX(cp.order_number) + 1, '5',0) AS order_number_counter
+                        FROM $tableName AS cp
+                        WHERE cp.dt_code IN %s
+                        GROUP BY cp.dt_code
+                    """
+        sqlSelectOrder = sqlSelectOrder.replace('%s', data['dtCode'])
+
+        sqlMainHeader   = """
                         UPDATE $tableName AS cph,
                         (
-                            $sqlSelect
+                            $sqlSelectHeader
                         ) AS src
-                        SET cph.order_number = src.order_number_counter
+                        SET cph.order_number = src.order_number_counter,
+                        cph.customer_code = src.customer_code,
+                        cph.warehouse_code = src.warehouse_code,
+                        cph.term_code = src.term_code
                         WHERE cph.dt_code IN %s
                         AND cph.created_on = "$timestamps"
                     """
 
-        sqlHeader = sqlMain.replace('$sqlSelect', sqlSelect).replace('$tableName', 'customer_portal_headers').replace('%s', data['dtCode']).replace('$timestamps', data['timestamps'])
-        sql       = sqlMain.replace('$sqlSelect', sqlSelect).replace('$tableName', 'customer_portal').replace('%s', data['dtCode']).replace('$timestamps', data['timestamps'])
+        sqlMainOrder   = """
+                        UPDATE $tableName AS cp,
+                        (
+                            $sqlSelectOrder
+                        ) AS src
+                        SET cp.order_number = src.order_number_counter
+                        WHERE cp.dt_code IN %s
+                        AND cp.created_on = "$timestamps"
+                    """
+
+        sqlHeader = sqlMainHeader.replace('$sqlSelectHeader', sqlSelectHeader).replace('$tableName', 'customer_portal_headers').replace('%s', data['dtCode']).replace('$timestamps', data['timestamps'])
+        sql       = sqlMainOrder.replace('$sqlSelectOrder', sqlSelectOrder).replace('$tableName', 'customer_portal').replace('%s', data['dtCode']).replace('$timestamps', data['timestamps'])
 
         try:
             # insert data
